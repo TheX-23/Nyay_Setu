@@ -1,0 +1,18 @@
+# Email Configuration for Gmail
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# JWT Configuration
+JWT_SECRET=change_me
+APP_BASE_URL=http://localhost:5000
+FLASK_ENV=development
+GOOGLE_CLIENT_ID=220538100604-dkqcj8j98uuqni9e7nrlh2ssb73modpj.apps.googleusercontent.com
+
+# Legal AI Integration
+LEGAL_AI_URL=http://localhost:10000/chat
+LEGAL_AI_KEY=
+
+# Database
+NYAYSETU_DB_PATH=nyaysetu.db

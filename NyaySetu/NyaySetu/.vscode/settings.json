@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./grok-1-main/grok-1-main"
+    ]
+}

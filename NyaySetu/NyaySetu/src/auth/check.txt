@@ -1,0 +1,4 @@
+// check
+if (!auth.currentUser.emailVerified) {
+  // block or show "verify your email" then allow Google/dev login as fallback
+}

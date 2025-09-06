@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="assets/nyaysetu-logo.svg">
+    <title>NyaySetu - Legal Aid Platform</title>
+    <style>
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .connection-status.connected {
+            background: #10b981;
+            color: white;
+        }
+        .connection-status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+        .connection-status.checking {
+            background: #f59e0b;
+            color: white;
+        }
+        .server-error-message {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #92400e;
+        }
+        .server-error-message h3 {
+            margin: 0 0 10px 0;
+            color: #92400e;
+        }
+        .server-error-message ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .server-error-message li {
+            margin: 5px 0;
+        }
+        .retry-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .retry-button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="connection-status checking">
+        <i class="fas fa-circle"></i> Checking connection...
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/nyaysetu-logo.svg" alt="NyaySetu Logo" class="logo-mark" width="48" height="48">
+                <h1>NyaySetu</h1>
+            </div>
+            <p class="tagline">Bridging Justice to Technology</p>
+            <div class="auth-panel">
+                <div class="auth-row">
+                    <input id="authEmail" type="email" placeholder="Email">
+                    <input id="authPassword" type="password" placeholder="Password">
+                    <button id="btnRegister" class="auth-btn">Register</button>
+                    <button id="btnLogin" class="auth-btn primary">Login</button>
+                    <button id="btnLogout" class="auth-btn danger" style="display:none">Logout</button>
+                    <button id="btnDevLogin" class="auth-btn" title="Dev Login (local only)">Dev</button>
+                </div>
+
+                <div id="authStatus" class="auth-status">Not logged in</div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="chat">
+                <i class="fas fa-comments"></i>
+                Legal Advice
+            </button>
+            <button class="tab-btn" data-tab="forms">
+                <i class="fas fa-file-alt"></i>
+                Form Generator
+            </button>
+            <button class="tab-btn" data-tab="resources">
+                <i class="fas fa-book"></i>
+                Resources
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Tab -->
+            <div id="chat" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2><i class="fas fa-robot"></i> AI Legal Assistant</h2>
+                        <p>Ask me any legal question in your preferred language</p>
+                    </div>
+                    
+                    <!-- Server Error Message (shown when backend is unavailable) -->
+                    <div id="serverErrorMessage" class="server-error-message" style="display: none;">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Backend Server Unavailable</h3>
+                        <p>The AI legal assistant is currently unavailable. This could be due to:</p>
+                        <ul>
+                            <li>The backend server is not running</li>
+                            <li>Network connectivity issues</li>
+                            <li>Server maintenance</li>
+                        </ul>
+                        <p><strong>To fix this:</strong></p>
+                        <ul>
+                            <li>Make sure the backend server is started (run <code>start_nyaysetu.bat</code>)</li>
+                            <li>Check if the server is running on <code>http://127.0.0.1:5000</code></li>
+                            <li>Try refreshing the page</li>
+                        </ul>
+                        <button class="retry-button" onclick="checkServerConnection()">
+                            <i class="fas fa-sync-alt"></i> Retry Connection
+                        </button>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>Hello! I'm your AI legal assistant. I can help you with legal advice, form generation, and general legal information. How can I assist you today?</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <div class="input-group">
+                            <select id="language" class="language-select">
+                                <option value="en">🇺🇸 English</option>
+                                <option value="hi">🇮🇳 हिंदी</option>
+                                <option value="or">🇮🇳 ଓଡ଼ିଆ</option>
+                                <option value="bn">🇮🇳 বাংলা</option>
+                                <option value="ta">🇮🇳 தமிழ்</option>
+                                <option value="te">🇮🇳 తెలుగు</option>
+                                <option value="ml">🇮🇳 മലയാളം</option>
+                                <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+                                <option value="gu">🇮🇳 ગુજરાતી</option>
+                                <option value="mr">🇮🇳 मराठी</option>
+                                <option value="pa">🇮🇳 ਪੰਜਾਬੀ</option>
+                                <option value="as">🇮🇳 অসমীয়া</option>
+                                <option value="mai">🇮🇳 मैथिली</option>
+                                <option value="ne">🇮🇳 नेपाली</option>
+                                <option value="sd">🇮🇳 سنڌي</option>
+                                <option value="ur">🇮🇳 اردو</option>
+                                <option value="ks">🇮🇳 کٕشمیری</option>
+                                <option value="sa">🇮🇳 संस्कृत</option>
+                                <option value="ko">🇮🇳 कोंकणी</option>
+                            </select>
+                            <input type="text" id="question" placeholder="Type your legal question here..." class="question-input">
+                            <button onclick="askChatbot()" class="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms Tab -->
+            <div id="forms" class="tab-content">
+                <div class="forms-container">
+                    <div class="forms-header">
+                        <h2><i class="fas fa-file-alt"></i> Legal Form Generator</h2>
+                        <p>Generate professional legal forms based on your requirements</p>
+                    </div>
+                    
+                    <div class="form-selection">
+                        <label for="formType">Select Form Type:</label>
+                        <select id="formType" class="form-type-select">
+                            <option value="FIR">First Information Report (FIR)</option>
+                            <option value="RTI">Right to Information (RTI)</option>
+                            <option value="COMPLAINT">General Complaint</option>
+                            <option value="APPEAL">Legal Appeal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-fields" id="formFields">
+                        <!-- Dynamic form fields will be loaded here -->
+                    </div>
+                    
+                    <button onclick="generateForm()" class="generate-btn">
+                        <i class="fas fa-magic"></i>
+                        Generate Form
+                    </button>
+                    <button id="btnGeneratePdf" class="generate-btn" style="margin-left:8px">
+                        <i class="fas fa-file-pdf"></i>
+                        Download PDF
+                    </button>
+                    
+                    <div class="generated-form" id="generatedForm">
+                        <!-- Generated form will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resources Tab -->
+            <div id="resources" class="tab-content">
+                <div class="resources-container">
+                    <div class="resources-header">
+                        <h2><i class="fas fa-book"></i> Legal Resources</h2>
+                        <p>Access helpful legal information and resources</p>
+                    </div>
+                    
+                    <div class="resources-grid">
+                        <div class="resource-card">
+                            <i class="fas fa-gavel"></i>
+                            <h3>Fundamental Rights (India)</h3>
+                            <ul>
+                                <li>Right to Equality (Articles 14–18)</li>
+                                <li>Right to Freedom (19–22)</li>
+                                <li>Right against Exploitation (23–24)</li>
+                                <li>Right to Freedom of Religion (25–28)</li>
+                                <li>Cultural & Educational Rights (29–30)</li>
+                                <li>Right to Constitutional Remedies (32)</li>
+                            </ul>
+                        </div>
+                        <div class="resource-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Women & Child Protection</h3>
+                            <ul>
+                                <li>Domestic Violence Act, 2005</li>
+                                <li>POSH: Sexual Harassment at Workplace Act, 2013</li>
+                                <li>POCSO: Protection of Children from Sexual Offences Act, 2012</li>
+                            </ul>
+                        </div>
+                        <div class="resource-card">
+                            <i class="fas fa-shopping-cart"></i>
+                            <h3>Consumer Rights</h3>
+                            <ul>
+                                <li>Right to Safety, Information, Choice</li>
+                                <li>Right to Redressal (Consumer Protection Act, 2019)</li>
+                                <li>File complaints via National Consumer Helpline</li>
+                            </ul>
+                        </div>
+                        <div class="resource-card">
+                            <i class="fas fa-file-signature"></i>
+                            <h3>RTI Basics</h3>
+                            <ul>
+                                <li>Submit RTI to Public Information Officer</li>
+                                <li>Response within 30 days</li>
+                                <li>Appeal process available</li>
+                            </ul>
+                        </div>
+                        <div class="resource-card">
+                            <i class="fas fa-phone"></i>
+                            <h3>Helplines (India)</h3>
+                            <ul>
+                                <li>Police: 100</li>
+                                <li>Fire: 101</li>
+                                <li>Ambulance: 108</li>
+                                <li>Women Helpline: 1091</li>
+                                <li>Childline: 1098</li>
+                                <li>Cybercrime: 1930</li>
+                                <li>Senior Citizens (Elderline): 14567</li>
+                                <li>Mental Health (Tele MANAS): 14416</li>
+                                <li>National Highway/Accident: 1033</li>
+                                <li>Consumer Helpline: 1915</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 NyaySetu. Empowering citizens with legal knowledge.</p>
+            <p class="disclaimer">This platform provides general legal information only. For specific legal advice, please consult a qualified lawyer.</p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Processing your request...</p>
+        </div>
+    </div>
+
+    
+    <script>window.__API_BASE_URL__ = 'http://127.0.0.1:5000';</script>
+    <script src="app.js"></script>
+</body>
+</html>
